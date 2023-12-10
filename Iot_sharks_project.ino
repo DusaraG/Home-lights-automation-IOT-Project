@@ -5,6 +5,7 @@
     #include <ESP8266WiFi.h>
 #endif
 #include "fauxmoESP.h"
+#include "mqtt.h"
 
 // Rename the credentials.sample.h file to credentials.h and 
 // edit it according to your router configuration
@@ -16,10 +17,10 @@ fauxmoESP fauxmo;
 
 #define SERIAL_BAUDRATE     115200
 
-#define LED_YELLOW          4
+#define LED_YELLOW          2
 #define LED_GREEN           5
 #define LED_BLUE            0
-#define LED_PINK            2
+#define LED_PINK            4
 #define LED_WHITE           15
 
 #define ID_YELLOW           "yellow lamp"
@@ -126,25 +127,25 @@ void setup() {
         }
 
     });
-
+    client.setServer(mqttServer, mqttPort);
+    client.setCallback(callback);  
 }
 
-void loop() {
 
+void loop() {
+     // For Subscription
+    mqtt_connect_sub(client);
+    client.loop(); 
+    
+  
     // fauxmoESP uses an async TCP server but a sync UDP server
     // Therefore, we have to manually poll for UDP packets
     fauxmo.handle();
 
-    // This is a sample code to output free heap every 5 seconds
-    // This is a cheap way to detect memory leaks
     static unsigned long last = millis();
     if (millis() - last > 5000) {
         last = millis();
         Serial.printf("[MAIN] Free heap: %d bytes\n", ESP.getFreeHeap());
     }
-
-    // If your device state is changed by any other means (MQTT, physical button,...)
-    // you can instruct the library to report the new state to Alexa on next request:
-    // fauxmo.setState(ID_YELLOW, true, 255);
-
 }
+
