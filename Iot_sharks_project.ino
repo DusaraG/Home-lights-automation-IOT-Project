@@ -3,46 +3,33 @@
 #include <FastLED.h>
 #include "fauxmoESP.h"
 #include <Arduino.h>
+#include <PubSubClient.h>
+#include "Mqtt.h"
+#include "Led.h"
+#include "Wifi_credentials.h"
 
-const char* ssid = "SLT-FIBER";
-const char* password = "SgSgSg1956##";
-
-const char* mqttServer = "broker.hivemq.com";
-const int mqttPort = 1883;
-
-const char* mqttTopic = "yourname/potValue";
-const char* subscribeTopic = "yowfe/command"; //For Subscription
+void Wifi_init();
+CRGB room1[NUM_LEDS];
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 fauxmoESP fauxmo;
 
+
 void setup() {
-  // put your setup code here, to run once:
+
   Serial.begin(115200);
+  Wifi_init();
 
-  WiFi.begin(ssid, password);  //Initialize WiFi Object
-
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.print(".");
-  }
-
-  Serial.println("Connected to WiFi");
-  Serial.print("IP Address : ");
-  Serial.print(WiFi.localIP());
-
-  client.setServer(mqttServer, mqttPort);
+  client.setServer(MQTTSERVER, MQTTPORT);
   client.setCallback(callback); // For Subscription
 
   while (!client.connected()) {
     Serial.println("Connecting to MQTT..");
-    if (client.connect("ESP8266ClientPasindu")) {
+    if (client.connect("ESP32SAHRKs")) {
       Serial.print("Connected to MQTT");
-      client.subscribe(subscribeTopic); // For Subscription
+      client.subscribe(TOPIC1); // For Subscription
+      client.subscribe(TOPIC2);
     } else {
       Serial.println("MQTT Failed to connect");
       delay(5000);
@@ -51,9 +38,12 @@ void setup() {
   fauxmo.createServer(true); // not needed, this is the default value
   fauxmo.setPort(80); // This is required for gen3 devices
   fauxmo.enable(true);
-  fauxmo.addDevice("ID_YELLOW");
+  fauxmo.addDevice("room1");
+  fauxmo.addDevice("room2");
+  fauxmo.addDevice("room3");
+  fauxmo.addDevice("room4");
   fauxmo.onSetState([](unsigned char device_id, const char * device_name, bool state, unsigned char value) {
-        
+        //client.publish();
         // Callback when a command from Alexa is received. 
         // You can use device_id or device_name to choose the element to perform an action onto (relay, LED,...)
         // State is a boolean (ON/OFF) and value a number from 0 to 255 (if you say "set kitchen light to 50%" you will receive a 128 here).
@@ -65,9 +55,9 @@ void setup() {
         // Checking for device_id is simpler if you are certain about the order they are loaded and it does not change.
         // Otherwise comparing the device_name is safer.
 
-        if (strcmp(device_name, "ID_YELLOW")==0) {
+        if (strcmp(device_name, "room1")==0) {
            digitalWrite(5, state ? HIGH : LOW);
-        }else if (strcmp(device_name, "ID_GREEN")==0) {
+        }else if (strcmp(device_name, "room2")==0) {
            digitalWrite(6, state ? HIGH : LOW);
         }
 
@@ -80,14 +70,4 @@ void loop() {
 }
 
 // For Subscription
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message received on topic: ");
-  Serial.println(topic);
 
-  char payloadStr[length + 1];
-  memcpy(payloadStr, payload, length);
-  payloadStr[length] = '\0';
-
-  Serial.print("Payload: ");
-  Serial.println(payloadStr);
-}
