@@ -1,5 +1,5 @@
-#define SSID "SLT-FIBER"
-#define PASSWORD "SgSgSg1956##"
+#define SSID "OnePlus 7T"
+#define PASSWORD "qwertasdf"
 
 void Wifi_init(){
   WiFi.begin(SSID, PASSWORD);  //Initialize WiFi Object
